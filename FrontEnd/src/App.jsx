@@ -22,12 +22,19 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input })
       })
-      
+
       const data = await response.json()
-      
+      if (!response.ok) {
+        throw new Error(data.detail || `Server returned ${response.status}`)
+      }
+
       setMessages((prev) => [...prev, { role: 'ai', content: data.reply }])
     } catch (error) {
-      setMessages((prev) => [...prev, { role: 'ai', content: 'Error connecting to the server.' }])
+      console.error('Chat request failed:', error)
+      setMessages((prev) => [...prev, {
+        role: 'ai',
+        content: `Server error: ${error.message}`
+      }])
     } finally {
       setIsLoading(false)
     }

@@ -1,6 +1,7 @@
 import os
 import sys
 import asyncio
+import traceback
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI):
         read, write = await cm.__aenter__()
         
         session = ClientSession(read, write)
+        await session.__aenter__()
         await session.initialize()
         
         tools = await load_mcp_tools(session)
@@ -85,6 +87,26 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
 
+def content_to_text(content) -> str:
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, str):
+                text_parts.append(block)
+            elif isinstance(block, dict) and isinstance(block.get("text"), str):
+                text_parts.append(block["text"])
+            else:
+                block_text = getattr(block, "text", None)
+                if isinstance(block_text, str):
+                    text_parts.append(block_text)
+        if text_parts:
+            return "\n".join(text_parts)
+
+    return str(content)
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     agent = app_state.get("agent")
@@ -96,9 +118,10 @@ async def chat_endpoint(request: ChatRequest):
             {"messages": [HumanMessage(content=request.message)]},
             config={"configurable": {"thread_id": "api-thread"}}
         )
-        reply_content = response["messages"][-1].content
+        reply_content = content_to_text(response["messages"][-1].content)
         return ChatResponse(reply=reply_content)
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
