@@ -1,2 +1,7 @@
 google-genai>=2.3.0
 yt-dlp
+mcp
+langchain
+langgraph
+langchain-google-genai
+langchain-mcp-adapters
