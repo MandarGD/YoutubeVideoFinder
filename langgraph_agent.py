@@ -5,7 +5,7 @@ from mcp import StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.session import ClientSession
 from langchain_mcp_adapters.tools import load_mcp_tools
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
@@ -53,7 +53,7 @@ async def main():
                 "Present the search results in a friendly, engaging markdown format. Always include the video "
                 "title, the channel, the number of views, and the direct URL link."
             )
-            agent = create_react_agent(llm, tools, state_modifier=system_prompt)
+            agent = create_agent(llm, tools, system_prompt=system_prompt)
             
             print("Chat with the agent (type 'quit' to exit).")
             
